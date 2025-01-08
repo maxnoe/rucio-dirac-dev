@@ -1,0 +1,408 @@
+name: rucio-dirac-dev
+
+services:
+  rucio-db:
+    hostname: rucio-db
+    image: "postgres:15"
+    environment:
+      POSTGRES_USER: rucio
+      POSTGRES_DB: rucio
+      POSTGRES_PASSWORD: secret
+    networks:
+      - rucio
+    volumes:
+      - rucio-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      timeout: 10s
+      start_period: 30s
+
+  rucio-init:
+    profiles:
+      - init
+    build:
+      context: ./
+      dockerfile: ./docker/rucio/Dockerfile
+      args:
+        RUCIO_CONTAINER: init
+        RUCIO_TAG: 
+    environment:
+      RUCIO_CFG_DATABASE_DEFAULT: "postgresql://rucio:secret@rucio-db/rucio"
+      RUCIO_CFG_BOOTSTRAP_USERPASS_IDENTITY: "test-user"
+      RUCIO_CFG_BOOTSTRAP_USERPASS_PWD: "secret"
+      RUCIO_CFG_BOOTSTRAP_X509_IDENTITY: "CN=Test User"
+      RUCIO_CFG_BOOTSTRAP_X509_EMAIL: "test@example.org"
+      RUCIO_CFG_POLICY_PACKAGE: "dirac_rucio_policy"
+      RUCIO_CFG_COMMON_EXTRACT_SCOPE: "dirac"
+      RUCIO_CFG_POLICY_LFN2PFN_ALGORITHM_DEFAULT: "dirac"
+    networks:
+      - rucio
+    depends_on:
+      rucio-db:
+        condition: service_healthy
+    volumes:
+      - rucio-server-config:/opt/rucio/etc/
+
+  rucio-server:
+    hostname: rucio-server
+    build:
+      context: ./
+      dockerfile: ./docker/rucio/Dockerfile
+      args:
+        RUCIO_CONTAINER: server
+    environment:
+      RUCIO_ENABLE_SSL: "True"
+      RUCIO_HTTPD_ENCODED_SLASHES: "True"
+      RUCIO_HTTPD_GRID_SITE_ENABLED: "True"
+    networks:
+      - rucio
+    depends_on:
+      rucio-db:
+        condition: service_healthy
+      rucio-storage-1:
+        condition: service_started
+      rucio-storage-2:
+        condition: service_started
+      rucio-storage-3:
+        condition: service_started
+      fts:
+        condition: service_healthy
+    volumes:
+      - rucio-server-config:/opt/rucio/etc/
+      - ./certs/hostcert_rucio-server.pem:/etc/grid-security/hostcert.pem:z
+      - ./certs/hostcert_rucio-server.key.pem:/etc/grid-security/hostkey.pem:z
+      - ./certs/test_ca.pem:/etc/grid-security/ca.pem:z
+  
+  # the conveyor daemons are responsible for file transfer / replication rules
+  rucio-conveyor-submitter:
+    hostname: rucio-conveyor-submitter
+    build:
+      context: ./
+      dockerfile: ./docker/rucio/Dockerfile
+      args:
+        RUCIO_CONTAINER: daemons
+    volumes:
+      - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
+      - "rucio-usercerts-root:/root/certs:z"
+    networks:
+      - rucio
+    depends_on:
+      - rucio-server
+    environment:
+      RUCIO_DAEMON: conveyor-submitter
+    env_file:
+      - ./rucio/daemon_env
+
+  rucio-conveyor-poller:
+    hostname: rucio-conveyor-poller
+    build:
+      context: ./
+      dockerfile: ./docker/rucio/Dockerfile
+      args:
+        RUCIO_CONTAINER: daemons
+    volumes:
+      - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
+      - "rucio-usercerts-root:/root/certs:z"
+    networks:
+      - rucio
+    depends_on:
+      - rucio-server
+    environment:
+      RUCIO_DAEMON: conveyor-poller
+    env_file:
+      - ./rucio/daemon_env
+
+  rucio-conveyor-finisher:
+    hostname: rucio-conveyor-finisher
+    build:
+      context: ./
+      dockerfile: ./docker/rucio/Dockerfile
+      args:
+        RUCIO_CONTAINER: daemons
+    volumes:
+      - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
+      - "rucio-usercerts-root:/root/certs:z"
+    networks:
+      - rucio
+    depends_on:
+      - rucio-server
+    environment:
+      RUCIO_DAEMON: conveyor-finisher
+    env_file:
+      - ./rucio/daemon_env
+
+  rucio-conveyor-evaluator:
+    hostname: rucio-conveyor-evaluator
+    build:
+      context: ./
+      dockerfile: ./docker/rucio/Dockerfile
+      args:
+        RUCIO_CONTAINER: daemons
+    volumes:
+      - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
+      - "rucio-usercerts-root:/root/certs:z"
+    networks:
+      - rucio
+    depends_on:
+      - rucio-server
+    environment:
+      RUCIO_DAEMON: conveyor-evaluator
+    env_file:
+      - ./rucio/daemon_env
+
+  rucio-storage-1:
+    hostname: rucio-storage-1
+    image: rucio/xrootd
+    environment:
+      XRDPORT: "1094"
+    volumes:
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
+      - ./certs/hostcert_rucio-storage-1.pem:/tmp/xrdcert.pem:z
+      - ./certs/hostcert_rucio-storage-1.key.pem:/tmp/xrdkey.pem:z
+    networks:
+      - rucio
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 2048
+
+  rucio-storage-2:
+    hostname: rucio-storage-2
+    image: rucio/xrootd
+    environment:
+      XRDPORT: "1094"
+    volumes:
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
+      - ./certs/hostcert_rucio-storage-2.pem:/tmp/xrdcert.pem:z
+      - ./certs/hostcert_rucio-storage-2.key.pem:/tmp/xrdkey.pem:z
+    networks:
+      - rucio
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 2048
+
+  rucio-storage-3:
+    hostname: rucio-storage-3
+    image: rucio/xrootd
+    environment:
+      XRDPORT: "1094"
+    volumes:
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
+      - ./certs/hostcert_rucio-storage-3.pem:/tmp/xrdcert.pem:z
+      - ./certs/hostcert_rucio-storage-3.key.pem:/tmp/xrdkey.pem:z
+    networks:
+      - rucio
+    ulimits:
+      nofile:
+        soft: 1024
+        hard: 2048
+
+  dirac-server:
+    image: dirac-server
+    hostname: dirac-server
+    build:
+      context: docker/dirac/server
+      args:
+        DIRACOS_VERSION: ${DIRACOS_VERSION}
+        RUCIO_VERSION: ${RUCIO_VERSION}
+        USERID: ${USERID}
+        GROUPID: ${GROUPID}
+    privileged: true
+    networks:
+      - dirac
+      - rucio
+    depends_on:
+      dirac-db:
+        condition: service_healthy
+    ports:
+      - ${DIRAC_WEB_HOST_PORT}:8443
+    volumes:
+      - "./rucio/rucio.cfg:/opt/rucio/etc/rucio.cfg"
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/test_ca.pem
+      - ./certs/test_ca.crl.r0:/etc/grid-security/certificates/test_ca.crl.r0
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
+      - ./certs/test_ca.crl.r0:/etc/grid-security/certificates/37cc428d.r0
+      - ./certs/hostcert_dirac-server.pem:/opt/dirac/etc/grid-security/hostcert.pem:z
+      - ./certs/hostcert_dirac-server.key.pem:/opt/dirac/etc/grid-security/hostkey.pem:z
+      - ./certs/ssh/diracuser_sshkey:/home/dirac/.ssh/diracuser_sshkey:z
+
+  dirac-db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: dirac-db-root
+      MYSQL_USER: Dirac
+      MYSQL_PASSWORD: dirac-db
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - dirac-db-data:/var/lib/mysql
+    networks:
+      - dirac
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      start_period: 30s
+
+  dirac-ce:
+    image: dirac-ce
+    hostname: dirac-ce
+    build:
+      context: dirac/ce
+      args:
+        DIRACOS_VERSION: ${DIRACOS_VERSION}
+        RUCIO_VERSION: ${RUCIO_VERSION}
+    privileged: true
+    networks:
+      - dirac
+      - rucio
+    volumes:
+      - cvmfs-keys:/etc/cvmfs/keys
+      - "./rucio/rucio.cfg:/home/dirac/rucio/etc/rucio.cfg"
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/test_ca.pem
+      - ./certs/test_ca.crl.r0:/etc/grid-security/certificates/test_ca.crl.r0
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
+      - ./certs/test_ca.crl.r0:/etc/grid-security/certificates/37cc428d.r0
+      - ./certs/ssh/diracuser_sshkey.pub:/home/dirac/.ssh/authorized_keys:z
+
+  fts:
+    image: rucio/fts:${RUCIO_VERSION}
+    hostname: fts
+    volumes:
+      - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
+      - ./certs/hostcert_fts.pem:/etc/grid-security/hostcert.pem:z
+      - ./certs/hostcert_fts.key.pem:/etc/grid-security/hostkey.pem:z
+    ulimits:
+      nofile:
+        soft: 10240
+        hard: 10240
+    depends_on:
+      - ftsdb
+    networks:
+      - rucio
+      - fts
+    healthcheck:
+      test: ["CMD-SHELL", "curl -k https://localhost:8446"]
+      timeout: 10s
+      start_period: 30s
+
+  ftsdb:
+    image: docker.io/mysql:8.3
+    hostname: ftsdb
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_USER=fts
+      - MYSQL_PASSWORD=fts
+      - MYSQL_ROOT_PASSWORD=fts
+      - MYSQL_DATABASE=fts
+    networks:
+      - fts
+    volumes:
+      - ftsdb-data:/var/lib/mysql
+
+
+  # the abacus daemons are responsible for updating book-keeping information like
+  # storage usage on RSEs / per account.
+  rucio-abacus-rse:
+    hostname: rucio-abacus-rse
+    image: rucio/rucio-daemons:release-${RUCIO_VERSION}
+    volumes:
+      - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
+      - "rucio-usercerts-root:/root/certs:z"
+    networks:
+      - rucio
+    depends_on:
+      - rucio-server
+    environment:
+      RUCIO_DAEMON: abacus-rse
+    env_file:
+      - ./rucio/daemon_env
+
+  rucio-abacus-account:
+    hostname: rucio-abacus-account
+    image: rucio/rucio-daemons:release-${RUCIO_VERSION}
+    volumes:
+      - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
+      - "rucio-usercerts-root:/root/certs:z"
+    networks:
+      - rucio
+    depends_on:
+      - rucio-server
+    environment:
+      RUCIO_DAEMON: abacus-account
+    env_file:
+      - ./rucio/daemon_env
+
+  rucio-abacus-collection-replica:
+    hostname: rucio-abacus-collection-replica
+    image: rucio/rucio-daemons:release-${RUCIO_VERSION}
+    volumes:
+      - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
+      - "rucio-usercerts-root:/root/certs:z"
+    networks:
+      - rucio
+    depends_on:
+      - rucio-server
+    environment:
+      RUCIO_DAEMON: abacus-collection-replica
+    env_file:
+      - ./rucio/daemon_env
+
+  clients:
+    hostname: clients
+    build:
+      context: ./
+      dockerfile: docker/clients/Dockerfile
+      args:
+        DIRACOS_VERSION: ${DIRACOS_VERSION}
+        RUCIO_VERSION: ${RUCIO_VERSION}
+        USERID: ${USERID}
+        GROUPID: ${GROUPID}
+    command: sleep infinity
+    privileged: true
+    networks:
+      - dirac
+      - rucio
+    volumes:
+      - "./rucio/setup_certificates.sh:/setup_certificates.sh"
+      - "./rucio/setup_rucio.sh:/setup_rucio.sh"
+      - "./:/home/user/repo"
+      - "./rucio/rucio.cfg:/home/user/rucio/etc/rucio.cfg"
+      - "./certs/user.pem:/home/user/.globus/usercert.pem:z"
+      - "./certs/user.key.pem:/home/user/.globus/userkey.pem:z"
+      - "./certs/test_ca.pem:/home/user/diracos/etc/grid-security/certificates/ca.pem:z"
+      - "./certs/test_ca.pem:/home/user/diracos/etc/grid-security/certificates/37cc428d.0:z"
+      # FIXME: the rucio daemons need a voms-proxy for user root to communicate with FTS
+      # the clients image has voms-proxy-init, so we use it to create it
+      # and share it via a docker volume. Should probably be done in a better way
+      - "rucio-usercerts-root:/root/certs/"
+    working_dir: "/home/user/repo"
+    environment:
+      RUCIO_HOME: "/home/user/rucio"
+      PYTEST_ADDOPTS: "-o cache_dir=/home/user/.pytest-cache"
+      PYTHONPYCACHEPREFIX: "/home/user/._pycache__"
+      RUCIO_CFG_CLIENT_RUCIO_HOST: "https://rucio-server"
+      RUCIO_CFG_CLIENT_AUTH_HOST: "https://rucio-server"
+      RUCIO_CFG_CLIENT_AUTH_TYPE: "userpass"
+      RUCIO_CFG_CLIENT_USERNAME: "test-user"
+      RUCIO_CFG_CLIENT_PASSWORD: "secret"
+      RUCIO_CFG_CLIENT_ACCOUNT: "root"
+      RUCIO_CFG_CLIENT_CLIENT_X509_PROXY: "/tmp/x509up_u${USERID}"
+      RUCIO_CFG_CLIENT_CERT: "/home/user/.globus/usercert.pem"
+      RUCIO_CFG_CLIENT_KEY: "/home/user/.globus/userkey.pem"
+      RUCIO_CFG_CLIENT_CA_CERT: "/home/user/diracos/etc/grid-security/certificates/37cc428d.0"
+      RUCIO_CFG_POLICY_PACKAGE: "bdms_rucio_policy"
+      RUCIO_CFG_COMMON_EXTRACT_SCOPE: "ctao_bdms"
+
+networks:
+  rucio:
+  cvmfs:
+  dirac:
+  fts:
+
+volumes:
+  rucio-db-data:
+  rucio-server-config:
+  cvmfs-keys:
+  dirac-db-data:
+  ftsdb-data:
+  rucio-usercerts-root:
