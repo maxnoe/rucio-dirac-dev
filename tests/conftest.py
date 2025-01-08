@@ -18,7 +18,7 @@ def rucio_test_account():
 
 @pytest.fixture(scope="session")
 def _dirac_proxy():
-    sp.run(["dirac-proxy-init", "-g", "dpps_group"], check=True)
+    sp.run(["dirac-proxy-init", "-g", "test_group"], check=True)
 
 
 @pytest.fixture(scope="session")

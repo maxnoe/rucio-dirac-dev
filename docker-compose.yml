@@ -25,7 +25,7 @@ services:
       dockerfile: ./docker/rucio/Dockerfile
       args:
         RUCIO_CONTAINER: init
-        RUCIO_TAG: 
+        RUCIO_TAG: ${RUCIO_TAG}
     environment:
       RUCIO_CFG_DATABASE_DEFAULT: "postgresql://rucio:secret@rucio-db/rucio"
       RUCIO_CFG_BOOTSTRAP_USERPASS_IDENTITY: "test-user"
@@ -50,6 +50,7 @@ services:
       dockerfile: ./docker/rucio/Dockerfile
       args:
         RUCIO_CONTAINER: server
+        RUCIO_TAG: ${RUCIO_TAG}
     environment:
       RUCIO_ENABLE_SSL: "True"
       RUCIO_HTTPD_ENCODED_SLASHES: "True"
@@ -81,6 +82,7 @@ services:
       dockerfile: ./docker/rucio/Dockerfile
       args:
         RUCIO_CONTAINER: daemons
+        RUCIO_TAG: ${RUCIO_TAG}
     volumes:
       - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
       - "rucio-usercerts-root:/root/certs:z"
@@ -100,6 +102,7 @@ services:
       dockerfile: ./docker/rucio/Dockerfile
       args:
         RUCIO_CONTAINER: daemons
+        RUCIO_TAG: ${RUCIO_TAG}
     volumes:
       - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
       - "rucio-usercerts-root:/root/certs:z"
@@ -119,6 +122,7 @@ services:
       dockerfile: ./docker/rucio/Dockerfile
       args:
         RUCIO_CONTAINER: daemons
+        RUCIO_TAG: ${RUCIO_TAG}
     volumes:
       - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
       - "rucio-usercerts-root:/root/certs:z"
@@ -138,6 +142,7 @@ services:
       dockerfile: ./docker/rucio/Dockerfile
       args:
         RUCIO_CONTAINER: daemons
+        RUCIO_TAG: ${RUCIO_TAG}
     volumes:
       - "./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0:z"
       - "rucio-usercerts-root:/root/certs:z"
@@ -253,6 +258,8 @@ services:
         DIRACOS_VERSION: ${DIRACOS_VERSION}
         DIRAC_VERSION: ${DIRAC_VERSION}
         RUCIO_VERSION: ${RUCIO_VERSION}
+        USERID: ${USERID}
+        GROUPID: ${GROUPID}
     privileged: true
     networks:
       - dirac
@@ -407,8 +414,8 @@ services:
       RUCIO_CFG_CLIENT_CERT: "/home/user/.globus/usercert.pem"
       RUCIO_CFG_CLIENT_KEY: "/home/user/.globus/userkey.pem"
       RUCIO_CFG_CLIENT_CA_CERT: "/home/user/diracos/etc/grid-security/certificates/37cc428d.0"
-      RUCIO_CFG_POLICY_PACKAGE: "bdms_rucio_policy"
-      RUCIO_CFG_COMMON_EXTRACT_SCOPE: "ctao_bdms"
+      RUCIO_CFG_POLICY_PACKAGE: "dirac_rucio_policy"
+      RUCIO_CFG_COMMON_EXTRACT_SCOPE: "dirac"
 
 networks:
   rucio:

@@ -5,11 +5,6 @@ import pytest
 from rucio.client.didclient import DIDClient
 from rucio.client.uploadclient import UploadClient
 
-pytestmark = [
-    pytest.mark.rucio_clients,
-    pytest.mark.bdms,
-]
-
 TEST_RSE = "STORAGE-1"
 
 
@@ -17,7 +12,7 @@ TEST_RSE = "STORAGE-1"
 def test_add_metadata(test_scope, tmp_path):
     """Test adding/getting metadata works"""
     name = "file_with_metadata"
-    lfn = f"/ctao.dpps.test/{test_scope}/name"
+    lfn = f"/testvo/{test_scope}/name"
     path = tmp_path / name
     path.write_text("Hello, World!")
 
@@ -61,7 +56,7 @@ def _metadata_test_dids(tmp_path, test_scope):
 
     def add_file(obs_id, tel_id, data_type):
         name = f"data_obs{obs_id}_tel{tel_id:03d}.{data_type}.txt"
-        lfn = f"/ctao.dpps.test/{test_scope}/{name}"
+        lfn = f"/testvo/{test_scope}/{name}"
         path = tmp_path / name
         path.write_text(name)
 

@@ -6,18 +6,13 @@ from rucio.client.replicaclient import ReplicaClient
 from rucio.client.uploadclient import UploadClient
 from test_utils_dirac import wait_for_status
 
-pytestmark = [
-    pytest.mark.bdms_wms,
-    pytest.mark.dirac_client,
-]
-
 
 @pytest.fixture(scope="session")
 def test_file(test_scope, tmp_path_factory):
     name = "test.dat"
     path = tmp_path_factory.mktemp("data_") / name
     path.write_text("Hello, World!")
-    lfn = f"/ctao.dpps.test/{test_scope}/{name}"
+    lfn = f"/testvo/{test_scope}/{name}"
 
     upload_spec = {
         "path": path,
@@ -58,7 +53,7 @@ def test_add_file(tmp_path, test_scope):
     path = tmp_path / name
     path.write_text("Hello from DIRAC")
 
-    lfn = f"/ctao.dpps.test/{test_scope}/{name}"
+    lfn = f"/testvo/{test_scope}/{name}"
 
     rse = "STORAGE-1"
     dm = DataManager()
@@ -116,7 +111,7 @@ def test_store_output(test_scope, tmp_path):
     job.setName("test_output_data")
     job.setDestination("CTAO.CI.de")
 
-    lfn = f"/ctao.dpps.test/{test_scope}/{name}"
+    lfn = f"/testvo/{test_scope}/{name}"
     job.setOutputData([f"LFN:{lfn}"], outputSE=rse)
 
     res = dirac.submitJob(job)

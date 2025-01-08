@@ -3,11 +3,6 @@ import pytest
 
 from test_utils_dirac import wait_for_status
 
-pytestmark = [
-    pytest.mark.wms,
-    pytest.mark.dirac_client,
-]
-
 
 @pytest.mark.usefixtures("_dirac_proxy")
 def test_status():
