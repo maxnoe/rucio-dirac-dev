@@ -6,27 +6,27 @@ lfns = {
     "/ctao.org/bar/test.dat": "bar",
     long_lfn: "test",
     # special handling
-    "/ctao.dpps.test/": "root",
-    "/ctao.dpps.test": "root",
+    "/testvo/": "root",
+    "/testvo": "root",
     "/": "root",
 }
 
 
 @pytest.mark.parametrize(("lfn", "expected_scope"), lfns.items())
 def test_extract_scope_ctao(lfn, expected_scope):
-    from bdms_rucio_policy.algorithms import extract_scope_bdms
+    from dirac_rucio_policy.algorithms import extract_scope_dirac
 
-    scope, did = extract_scope_bdms(lfn, scopes=None)
+    scope, did = extract_scope_dirac(lfn, scopes=None)
     assert scope == expected_scope
     assert did == lfn
 
 
 @pytest.mark.parametrize("lfn", lfns)
 def test_extract_scope_ctao_invalid(lfn):
-    from bdms_rucio_policy.algorithms import extract_scope_bdms
+    from dirac_rucio_policy.algorithms import extract_scope_dirac
 
     with pytest.raises(ValueError, match="DID 'test:foo.dat' does not match"):
-        extract_scope_bdms("test:foo.dat", scopes=None)
+        extract_scope_dirac("test:foo.dat", scopes=None)
 
     with pytest.raises(ValueError, match="DID 'test/bar/baz' does not match"):
-        extract_scope_bdms("test/bar/baz", scopes=None)
+        extract_scope_dirac("test/bar/baz", scopes=None)

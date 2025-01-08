@@ -205,6 +205,7 @@ services:
       context: docker/dirac/server
       args:
         DIRACOS_VERSION: ${DIRACOS_VERSION}
+        DIRAC_VERSION: ${DIRAC_VERSION}
         RUCIO_VERSION: ${RUCIO_VERSION}
         USERID: ${USERID}
         GROUPID: ${GROUPID}
@@ -244,12 +245,13 @@ services:
       start_period: 30s
 
   dirac-ce:
-    image: dirac-ce
     hostname: dirac-ce
     build:
-      context: dirac/ce
+      context: ./
+      dockerfile: docker/dirac/ce/Dockerfile
       args:
         DIRACOS_VERSION: ${DIRACOS_VERSION}
+        DIRAC_VERSION: ${DIRAC_VERSION}
         RUCIO_VERSION: ${RUCIO_VERSION}
     privileged: true
     networks:
@@ -263,6 +265,20 @@ services:
       - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
       - ./certs/test_ca.crl.r0:/etc/grid-security/certificates/37cc428d.r0
       - ./certs/ssh/diracuser_sshkey.pub:/home/dirac/.ssh/authorized_keys:z
+
+  cvmfs-stratum0:
+    image: cvmfs-stratum0:latest
+    hostname: cvmfs-stratum0
+    build:
+      context: docker/cvmfs/stratum0
+    privileged: true
+    cgroup: host
+    volumes:
+      - cvmfs-keys:/etc/cvmfs/keys
+      - /sys/fs/cgroup:/sys/fs/cgroup
+    networks:
+      - dirac
+
 
   fts:
     image: rucio/fts:${RUCIO_VERSION}
@@ -354,6 +370,7 @@ services:
       dockerfile: docker/clients/Dockerfile
       args:
         DIRACOS_VERSION: ${DIRACOS_VERSION}
+        DIRAC_VERSION: ${DIRAC_VERSION}
         RUCIO_VERSION: ${RUCIO_VERSION}
         USERID: ${USERID}
         GROUPID: ${GROUPID}

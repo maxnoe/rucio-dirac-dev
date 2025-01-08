@@ -1,12 +1,13 @@
 # first stage, build policy package
 FROM python:3.9 AS builder
 
-ADD ../../policy /src/
+ADD /policy /src/
 RUN python -m pip install --no-cache build && python -m build --wheel /src/ 
 
 FROM almalinux:9
 
-ARG DIRACOS_VERSION="2.43"
+ARG DIRACOS_VERSION="2.46"
+ARG DIRAC_VERSION="8.0.62"
 ARG RUCIO_VERSION="36.0.0.post2"
 ARG USERID=1000
 ARG GROUPID=1000
@@ -35,7 +36,7 @@ RUN curl -LO https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOS_V
     && bash DIRACOS-Linux-x86_64.sh -p ${DIRAC_DIR}/diracos \
     && rm -f DIRACOS-Linux-x86_64.sh \
     && source ${DIRAC_DIR}/diracos/diracosrc \
-    && micromamba install rucio-clients==${RUCIO_VERSION} pytest \
+    && micromamba install dirac-grid=${DIRAC_VERSION} rucio-clients==${RUCIO_VERSION} pytest \
     && pip install --no-cache-dir /tmp/*.whl
 
 RUN mkdir -p ${DIRAC_DIR}/.globus \

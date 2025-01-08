@@ -120,7 +120,7 @@ def setup_dirac(args):
         "-C",
         "dips://dirac-server:9135/Configuration/Server",
         "-S",
-        "DPPS-Tests",
+        "Rucio-Tests",
     )
     user_exec("clients", "dirac-proxy-init", "-g", "dirac_admin")
     user_exec("clients", "dirac-admin-allow-site", "CTAO.CI.de", "add site")
@@ -137,17 +137,6 @@ def setup_dirac(args):
     compose_exec(
         "cvmfs-stratum0", "cvmfs_server", "mkfs", "-o", "root", "testvo"
     )
-    compose_cp("cvmfs/stratum1/server.local", "cvmfs-stratum1:/etc/cvmfs/server.local")
-    compose_exec(
-        "cvmfs-stratum1",
-        "cvmfs_server",
-        "add-replica",
-        "-o",
-        "root",
-        "http://cvmfs-stratum0/cvmfs/testvo",
-        "/etc/cvmfs/keys",
-    )
-
     # install rucio cfg to cvmfs
     compose_exec("cvmfs-stratum0", "cvmfs_server", "transaction")
     # due to how overlay-fs works in docker and inside the container, we cannot just copy
@@ -160,9 +149,6 @@ def setup_dirac(args):
     )
     compose_exec("cvmfs-stratum0", "cvmfs_server", "publish")
 
-    # force Synchronisation on stratum1
-    compose_exec("cvmfs-stratum1", "cvmfs_server", "snapshot")
-
 
 def setup_rucio(args):
     if any_running(*RUCIO_SERVICES):
@@ -174,9 +160,7 @@ def setup_rucio(args):
 
     # run database init first
     compose_up("rucio-db")
-    cmd = ["docker", "compose", "run", "--rm", "rucio-init"]
-    print(shlex.join(cmd))
-    sp.run(cmd, check=True)
+    compose(["run", "--rm", "rucio-init"])
 
     # then all the rest
     compose_up(*RUCIO_SERVICES, *COMMON_SERVICES)

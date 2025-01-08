@@ -6,7 +6,7 @@ ARG USER=root
 # first stage, build policy package
 FROM python:3.9 AS builder
 
-ADD ../../policy /src/
+ADD /policy /src/
 RUN python -m pip install --no-cache build && python -m build --wheel /src/ 
 
 
