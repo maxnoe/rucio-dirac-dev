@@ -30,12 +30,29 @@ Since the setup requires executing commands in the started docker containers
 in particular orders that cannot really be performed by entry points,
 a python script performing these steps is provided.
 
-Run `python3 dev_setup.py setup` to spin up all components.
+To spin up all components, run
+```
+[host] $ python3 dev_setup.py setup`
+```
+
+The containers are build to run using your local user / group IDs
+to prevent issues with file permissions / ownership.
+If you interact manually with docker compose, please run before:
+```
+[host] $ source env.sh
+```
+
+Then you can run commands without getting warnings about undefined `USERID`/`GROUPID`, e.g.:
+```
+[host] $ docker compose ps
+```
+
 
 For a clean start (removing everything including data), run
 ```
 [host] $ python3 dev_setup.py teardown
 ```
+
 
 ## Tests
 
