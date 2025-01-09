@@ -5,6 +5,7 @@ import sys
 import time
 from argparse import ArgumentParser
 from functools import partial
+from pathlib import Path
 
 RUCIO_SERVICES = [
     "rucio-db",
@@ -43,6 +44,15 @@ os.environ["USERID"] = os.getenv(
 os.environ["GROUPID"] = os.getenv(
     "GROUPID", current_gid if current_gid != "0" else "1000"
 )
+
+def chmod_certs():
+    # git does not store file permissions, but private keys need
+    # to be only readable by the user
+    for path in Path("certs").glob("*.key.pem"):
+        path.chmod(0o600)
+
+    for path in Path("certs/ssh").glob("*"):
+        path.chmod(0o600)
 
 
 def compose(args):
@@ -96,6 +106,7 @@ def any_running(*services):
 
 
 def setup_dirac(args):
+    chmod_certs()
     if any_running(*DIRAC_SERVICES):
         print(
             "At least one DIRAC service is already running. Run teardown-dirac if you want to start fresh."
@@ -151,6 +162,7 @@ def setup_dirac(args):
 
 
 def setup_rucio(args):
+    chmod_certs()
     if any_running(*RUCIO_SERVICES):
         print(
             "At least one RUCIO service is already running."
