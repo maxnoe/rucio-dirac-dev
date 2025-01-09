@@ -135,7 +135,7 @@ def setup_dirac(args):
 
     # cvmfs setup
     compose_exec(
-        "cvmfs-stratum0", "cvmfs_server", "mkfs", "-o", "root", "testvo"
+        "cvmfs-stratum0", "cvmfs_server", "mkfs", "-o", "root", "testvo.example.org"
     )
     # install rucio cfg to cvmfs
     compose_exec("cvmfs-stratum0", "cvmfs_server", "transaction")
@@ -143,9 +143,9 @@ def setup_dirac(args):
     # the file using docker cp into the container into the /cvmfs/ directory.
     # Solution: copy to tmp, move in container.
     compose_cp("rucio/rucio_dirac_user.cfg", "cvmfs-stratum0:/tmp/rucio.cfg")
-    compose_exec("cvmfs-stratum0", "mkdir", "-p", "/cvmfs/testvo/rucio/etc/")
+    compose_exec("cvmfs-stratum0", "mkdir", "-p", "/cvmfs/testvo.example.org/rucio/etc/")
     compose_exec(
-        "cvmfs-stratum0", "mv", "/tmp/rucio.cfg", "/cvmfs/testvo/rucio/etc/"
+        "cvmfs-stratum0", "mv", "/tmp/rucio.cfg", "/cvmfs/testvo.example.org/rucio/etc/"
     )
     compose_exec("cvmfs-stratum0", "cvmfs_server", "publish")
 

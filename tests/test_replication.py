@@ -36,8 +36,8 @@ def wait_for_replication_status(rule, status, timeout=180, poll=5):
 def test_replication(test_scope, tmp_path):
     name = "transfer_test"
     # dataset_lfn = name
-    dataset_lfn = f"/testvo/{test_scope}/{name}"
-    file_lfn = f"/testvo/{test_scope}/{name}.dat"
+    dataset_lfn = f"/testvo.example.org/{test_scope}/{name}"
+    file_lfn = f"/testvo.example.org/{test_scope}/{name}.dat"
 
     path = tmp_path / f"{name}.dat"
     path.write_text("I am a test for replication rules.")

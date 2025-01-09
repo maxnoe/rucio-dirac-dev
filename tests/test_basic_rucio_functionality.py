@@ -72,7 +72,7 @@ def test_rses():
 
 def test_add_dataset(test_scope):
     """Test adding a simple dataset works"""
-    dataset_name = f"/testvo/{test_scope}/dataset_aiv_basic"
+    dataset_name = f"/testvo.example.org/{test_scope}/dataset_aiv_basic"
 
     did_client = DIDClient()
     success = did_client.add_dataset(
@@ -89,7 +89,7 @@ def test_add_dataset(test_scope):
 @pytest.mark.usefixtures("voms_proxy")
 def test_upload_file(test_scope, tmp_path):
     """Test uploading a simple file works"""
-    lfn = f"/testvo/{test_scope}/file_aiv_basic"
+    lfn = f"/testvo.example.org/{test_scope}/file_aiv_basic"
     path = tmp_path / "file_aiv_basic"
     path.write_text("Hello, World!")
 

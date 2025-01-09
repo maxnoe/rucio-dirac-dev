@@ -25,7 +25,7 @@ RUN dnf install -y \
     && cvmfs_config setup
 
 
-ADD /docker/dirac/ce/testvo.conf /etc/cvmfs/config.d/testvo.conf
+ADD /docker/dirac/ce/testvo.example.org.conf /etc/cvmfs/config.d/testvo.example.org.conf
 ADD /docker/dirac/ce/default.local /etc/cvmfs/default.local
 
 RUN systemctl enable sshd
@@ -33,9 +33,9 @@ RUN cd /etc/ssh \
     && ssh-keygen -A
 
 RUN mkdir -p /etc/grid-security/certificates
-RUN mkdir -p /etc/grid-security/vomsdir/testvo
+RUN mkdir -p /etc/grid-security/vomsdir/testvo.example.org
 RUN mkdir -p /etc/grid-security/vomses
-RUN touch /etc/grid-security/vomses/testvo
+RUN touch /etc/grid-security/vomses/testvo.example.org
 
 RUN \
   if getent group ${GROUPID}; then \

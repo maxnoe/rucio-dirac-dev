@@ -6,8 +6,8 @@ lfns = {
     "/ctao.org/bar/test.dat": "bar",
     long_lfn: "test",
     # special handling
-    "/testvo/": "root",
-    "/testvo": "root",
+    "/testvo.example.org/": "root",
+    "/testvo.example.org": "root",
     "/": "root",
 }
 

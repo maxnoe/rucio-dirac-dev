@@ -44,4 +44,4 @@ fts-rest-delegate -vf -s https://fts:8446 -H 9999
 # also needed for the DIRAC integration, due to idiosyncrasies of the belle2 code
 rucio scope add --account root --scope root
 # the root container for the VO already needs to exist
-rucio did add --type container -d /testvo
+rucio did add --type container -d /testvo.example.org
