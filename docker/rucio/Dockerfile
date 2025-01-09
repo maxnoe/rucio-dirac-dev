@@ -31,4 +31,7 @@ RUN dnf install -y --setopt=install_weak_deps=False git \
 
 USER ${USER}
 
-ENV RUCIO_POLICY_PACKAGE=dirac_rucio_policy
+ENV RUCIO_POLICY_PACKAGE="dirac_rucio_policy"
+ENV RUCIO_CFG_POLICY_PACKAGE="dirac_rucio_policy"
+ENV RUCIO_CFG_COMMON_EXTRACT_SCOPE="dirac"
+ENV RUCIO_CFG_POLICY_LFN2PFN_ALGORITHM_DEFAULT="dirac"
