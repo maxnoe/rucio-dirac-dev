@@ -21,7 +21,6 @@ jobs:
 
       - name: Setup
         run: |
-          chmod 600 certs/*.key.pem certs/ssh/*
           python3 dev_setup.py setup
 
       - name: Tests
