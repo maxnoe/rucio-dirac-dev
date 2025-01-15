@@ -120,6 +120,11 @@ def setup_dirac(args):
     if os.getenv("DIRAC_REPOSITORY"):
         compose_exec("clients", "pip",  "install",  "-e", "/src/DIRAC", user="root")
         compose_exec("dirac-server", "pip",  "install",  "-e", "/src/DIRAC", user="root")
+
+    if os.getenv("RUCIO_REPOSITORY"):
+        compose_exec("dirac-server", "pip",  "install",  "-e", "/src/rucio", user="root")
+
+    if os.getenv("RUCIO_REPOSITORY") or os.getenv("DIRAC_REPOSITORY"):
         compose(["restart", "dirac-server"])
         time.sleep(15)
 

@@ -234,6 +234,7 @@ services:
       - ./certs/hostcert_dirac-server.key.pem:/opt/dirac/etc/grid-security/hostkey.pem:z
       - ./certs/ssh/diracuser_sshkey:/home/dirac/.ssh/diracuser_sshkey:z
       - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
+      - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
   dirac-db:
     image: mysql:8
     environment:
