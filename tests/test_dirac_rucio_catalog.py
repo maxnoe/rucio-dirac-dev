@@ -4,7 +4,10 @@ import pytest
 
 from rucio.client.replicaclient import ReplicaClient
 from rucio.client.uploadclient import UploadClient
+from rucio.client.didclient import DIDClient
+
 from test_utils_dirac import wait_for_status
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 
 @pytest.fixture(scope="session")
@@ -130,3 +133,94 @@ def test_store_output(test_scope, tmp_path):
     result = dirac.getFile(lfn, destDir=str(tmp_path))
     assert result["OK"], f"Error downloading file: {result['Message']}"
     assert (tmp_path / name).read_text() == "Hello from DIRAC\n"
+
+
+@pytest.mark.verifies_usecase("DPPS-UC-110-1.X")
+@pytest.mark.usefixtures("_init_dirac")
+def test_add_metadata(tmp_path, test_scope):
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+
+    name = "add_test_metadata.dat"
+    path = tmp_path / name
+    path.write_text("Hello from DIRAC")
+
+    lfn = f"/testvo.example.org/{test_scope}/{name}"
+
+    rse = "STORAGE-1"
+    dm = DataManager()
+    resultPutAndRegister = dm.putAndRegister(lfn, str(path), rse)
+
+    # check dirac result
+    # print("\n".join(result['CallStack']))
+    assert resultPutAndRegister["OK"]
+    failed = resultPutAndRegister["Value"]["Failed"]
+    assert len(failed) == 0, f"Failed to upload file: {failed}, result: {result}"
+    successful = resultPutAndRegister["Value"]["Successful"]
+    assert lfn in successful
+    assert "put" in successful[lfn]
+    assert "register" in successful[lfn]
+
+    # add metadata
+    catalog = FileCatalog(catalogs=['RucioFileCatalog'])
+    metadata_dict = {
+            'date': '15/01/2025',
+            'source': 'crabe',
+            'obs_id': '45E18'
+        }
+    catalog.setMetadata(lfn, metadata_dict)
+   
+    # get metadata
+    #returnedMetadata=catalog.getFileUserMetadata([lfn])["Value"]["Successful"][lfn]
+    result = catalog.getFileUserMetadata([lfn])
+    assert result["OK"]
+    returnedMetadata = result["Value"]["Successful"][lfn]
+    assert '15/01/2025' in returnedMetadata['date']
+    assert 'crabe' in returnedMetadata['source']
+    assert '45E18' in returnedMetadata['obs_id']
+
+    # find file by metadata
+    #catalog.
+
+
+
+@pytest.mark.usefixtures("_init_dirac")
+def test_add_metadata_using_rucio_setmetadata(tmp_path, test_scope):
+    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+
+    name = "add_test_metadata.dat"
+    path = tmp_path / name
+    path.write_text("Hello from DIRAC")
+
+    lfn = f"/testvo.example.org/{test_scope}/{name}"
+
+    rse = "STORAGE-1"
+    dm = DataManager()
+    resultPutAndRegister = dm.putAndRegister(lfn, str(path), rse)
+
+    # check dirac result
+    # print("\n".join(result['CallStack']))
+    assert resultPutAndRegister["OK"]
+    failed = resultPutAndRegister["Value"]["Failed"]
+    assert len(failed) == 0, f"Failed to upload file: {failed}, result: {result}"
+    successful = resultPutAndRegister["Value"]["Successful"]
+    assert lfn in successful
+    assert "put" in successful[lfn]
+    assert "register" in successful[lfn]
+
+   
+    did_client = DIDClient()
+    meta = {
+        "obs_id": 200000001,
+        "tel_id": 1,
+        "category": "A",
+        "format": "zfits",
+        "data_levels": ["DL0", "DL1"],
+        "data_type": "event",
+    }
+    did_client.set_metadata_bulk(scope=test_scope, name=lfn, meta=meta)
+
+    # get metadata
+    catalog = FileCatalog(catalogs=['RucioFileCatalog'])
+    resultGetMetadata=catalog.getFileUserMetadata([lfn])
+    print('returned')
+    assert resultGetMetadata["OK"],resultGetMetadata["Message"]
