@@ -73,6 +73,7 @@ services:
       - ./certs/hostcert_rucio-server.pem:/etc/grid-security/hostcert.pem:z
       - ./certs/hostcert_rucio-server.key.pem:/etc/grid-security/hostkey.pem:z
       - ./certs/test_ca.pem:/etc/grid-security/ca.pem:z
+      - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
   
   # the conveyor daemons are responsible for file transfer / replication rules
   rucio-conveyor-submitter:
@@ -232,7 +233,8 @@ services:
       - ./certs/hostcert_dirac-server.pem:/opt/dirac/etc/grid-security/hostcert.pem:z
       - ./certs/hostcert_dirac-server.key.pem:/opt/dirac/etc/grid-security/hostkey.pem:z
       - ./certs/ssh/diracuser_sshkey:/home/dirac/.ssh/diracuser_sshkey:z
-
+      - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
+      - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
   dirac-db:
     image: mysql:8
     environment:
@@ -399,6 +401,9 @@ services:
       # the clients image has voms-proxy-init, so we use it to create it
       # and share it via a docker volume. Should probably be done in a better way
       - "rucio-usercerts-root:/root/certs/"
+      - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
+      - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
+      
     working_dir: "/home/user/repo"
     environment:
       RUCIO_HOME: "/home/user/rucio"
