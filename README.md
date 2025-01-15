@@ -9,9 +9,6 @@ use DIRAC with Rucio for the Rucio-DIRAC 2025-01 workshop at CERN.
 The setup here consists of a simplified Rucio and DIRAC setup,
 running in docker compose on a single machine.
 
-At the moment, it is not a development setup, as it relies
-on the published release artifacts of both Rucio and DIRAC.
-
 It could be expanded during the workshop to allow local
 development (i.e. running the components based on local sources).
 
@@ -29,6 +26,16 @@ This setup relies on the:
 Since the setup requires executing commands in the started docker containers
 in particular orders that cannot really be performed by entry points,
 a python script performing these steps is provided.
+
+If you want to develop rucio and/or DIRAC, you need to export two environment variables
+pointing to the rucio and DIRAC repositories respectively:
+
+```
+$ export DIRAC_REPOSITORY=/abs/path/to/your/DIRAC
+$ export RUCIO_REPOSITORY=/abs/path/to/your/rucio
+```
+
+The repositories will be mounted into the relevant containers and installed in editable mode.
 
 To spin up all components, run
 ```
