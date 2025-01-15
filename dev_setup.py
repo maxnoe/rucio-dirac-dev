@@ -114,7 +114,11 @@ def setup_dirac(args):
         sys.exit(1)
 
     compose_up(*DIRAC_SERVICES, *COMMON_SERVICES)
-
+    time.sleep(15)
+    compose_exec("clients", "pip",  "install",  "-e", "/src/DIRAC", user="root")
+    compose_exec("dirac-server", "pip",  "install",  "-e", "/src/DIRAC", user="root")
+    compose(["restart", "dirac-server"])
+    time.sleep(15)
     # dirac setup, the installation process needs the DB, so we cannot
     # run it already at image build time
     dirac_exec = partial(compose_exec, user="dirac:dirac")
@@ -176,6 +180,10 @@ def setup_rucio(args):
 
     # then all the rest
     compose_up(*RUCIO_SERVICES, *COMMON_SERVICES)
+    time.sleep(15)
+    compose_exec("clients", "pip",  "install",  "-e", "/src/rucio", user="root")
+    compose_exec("rucio-server", "pip",  "install",  "-e", "/src/rucio", user="root")
+    compose(["restart", "rucio-server"])
     time.sleep(15)
     compose_exec("clients", "/setup_certificates.sh", user="root")
     compose_exec("clients", "/setup_rucio.sh")
