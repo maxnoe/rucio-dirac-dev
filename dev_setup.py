@@ -71,6 +71,21 @@ def compose_exec(service, *cmd, user=None):
     compose(run)
 
 
+def symlink_rucio_setup(client=False):
+    repo = os.getenv("RUCIO_REPOSITORY")
+    if repo is None:
+        return
+    
+    link = Path(repo) / "setup.py"
+    if link.exists() or link.is_symlink():
+        link.unlink()
+
+    if client:
+        link.symlink_to("setup_rucio_client.py")
+    else:
+        link.symlink_to("setup_rucio.py")
+
+
 def compose_up(*services):
     cmd = [
         "up",
@@ -122,6 +137,7 @@ def setup_dirac(args):
         compose_exec("dirac-server", "pip",  "install",  "-e", "/src/DIRAC", user="root")
 
     if os.getenv("RUCIO_REPOSITORY"):
+        symlink_rucio_setup(client=True)
         compose_exec("dirac-server", "pip",  "install",  "-e", "/src/rucio", user="root")
 
     if os.getenv("RUCIO_REPOSITORY") or os.getenv("DIRAC_REPOSITORY"):
@@ -192,7 +208,9 @@ def setup_rucio(args):
     time.sleep(15)
 
     if os.getenv("RUCIO_REPOSITORY"):
+        symlink_rucio_setup(client=True)
         compose_exec("clients", "pip",  "install",  "-e", "/src/rucio", user="root")
+        symlink_rucio_setup(client=False)
         compose_exec("rucio-server", "pip",  "install",  "-e", "/src/rucio", user="root")
         compose(["restart", "rucio-server"])
         time.sleep(15)
