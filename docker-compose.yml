@@ -215,7 +215,6 @@ services:
         RUCIO_VERSION: ${RUCIO_VERSION}
         USERID: ${USERID}
         GROUPID: ${GROUPID}
-    privileged: true
     networks:
       - dirac
       - rucio
@@ -235,6 +234,7 @@ services:
       - ./certs/ssh/diracuser_sshkey:/home/dirac/.ssh/diracuser_sshkey:z
       - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
       - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
+
   dirac-db:
     image: mysql:8
     environment:
