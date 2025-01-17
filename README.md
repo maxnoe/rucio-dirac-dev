@@ -27,19 +27,13 @@ Since the setup requires executing commands in the started docker containers
 in particular orders that cannot really be performed by entry points,
 a python script performing these steps is provided.
 
-If you want to develop rucio and/or DIRAC, you need to export two environment variables
-pointing to the rucio and DIRAC repositories respectively:
-
-```
-$ export DIRAC_REPOSITORY=/abs/path/to/your/DIRAC
-$ export RUCIO_REPOSITORY=/abs/path/to/your/rucio
-```
-
+If you want to develop rucio and/or DIRAC, you need to pass the paths to the 
+rucio and DIRAC repositories to the setup command.
 The repositories will be mounted into the relevant containers and installed in editable mode.
 
 To spin up all components, run
 ```
-[host] $ python3 dev_setup.py setup`
+[host] $ python3 dev_setup.py setup [--rucio /path/to/rucio] [--dirac /path/to/DIRAC]
 ```
 
 The containers are build to run using your local user / group IDs
