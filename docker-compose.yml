@@ -262,7 +262,6 @@ services:
         RUCIO_VERSION: ${RUCIO_VERSION}
         USERID: ${USERID}
         GROUPID: ${GROUPID}
-    privileged: true
     networks:
       - dirac
       - rucio
