@@ -27,10 +27,9 @@ RUN dnf install -y \
 
 ADD /docker/dirac/ce/testvo.example.org.conf /etc/cvmfs/config.d/testvo.example.org.conf
 ADD /docker/dirac/ce/default.local /etc/cvmfs/default.local
+Add /docker/dirac/ce/entrypoint.sh /entrypoint.sh
 
-RUN systemctl enable sshd
-RUN cd /etc/ssh \
-    && ssh-keygen -A
+RUN cd /etc/ssh && ssh-keygen -A
 
 RUN mkdir -p /etc/grid-security/certificates
 RUN mkdir -p /etc/grid-security/vomsdir/testvo.example.org
@@ -61,4 +60,5 @@ RUN mkdir -p ${DIRAC_DIR} \
     && ln -s ${DIRAC_DIR} /dirac/pro \
     && chown -R dirac:dirac /dirac
 
-CMD ["/usr/sbin/init"]
+
+ENTRYPOINT ["/entrypoint.sh"]

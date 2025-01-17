@@ -13,9 +13,6 @@ RUN dnf install -y \
         iptables-services \
         https://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-2.el9.x86_64.rpm
 
-COPY ./runsvdir-start.service /usr/lib/systemd/system/runsvdir-start.service
-RUN systemctl enable runsvdir-start
-
 RUN \
   if getent group ${GROUPID}; then \
     groupmod --new-name dirac $(getent group ${GROUPID} | cut -d: -f1); \
@@ -52,7 +49,7 @@ COPY --chown=dirac:dirac ./bashrc ./dirac-installation.cfg /opt/dirac/
 
 # switch back to root for running systemd
 USER root
-CMD ["/usr/sbin/init"]
+CMD ["/opt/dirac/sbin/runsvdir-start"]
 
 ENV \
   DIRAC="${DIRACOS}" \
