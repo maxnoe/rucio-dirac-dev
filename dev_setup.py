@@ -121,6 +121,15 @@ def any_running(*services):
 
 
 def setup_dirac(args):
+    if args.rucio is not None:
+        print(f"Using rucio repository in {args.rucio}")
+        os.environ["RUCIO_REPOSITORY"] = str(args.rucio.absolute())
+
+    if args.dirac is not None:
+        print(f"Using DIRAC repository in {args.dirac}")
+        os.environ["DIRAC_REPOSITORY"] = str(args.dirac.absolute())
+
+
     chmod_certs()
     if any_running(*DIRAC_SERVICES):
         print(
@@ -191,6 +200,10 @@ def setup_dirac(args):
 
 
 def setup_rucio(args):
+    if args.rucio is not None:
+        print(f"Using rucio repository in {args.rucio}")
+        os.environ["RUCIO_REPOSITORY"] = str(args.rucio.absolute())
+
     chmod_certs()
     if any_running(*RUCIO_SERVICES):
         print(
@@ -209,7 +222,7 @@ def setup_rucio(args):
 
     if os.getenv("RUCIO_REPOSITORY"):
         symlink_rucio_setup(client=True)
-        compose_exec("clients", "pip",  "install",  "-e", "/src/rucio", user="root")
+        compose_exec("clients", "pip",  "install",  "-e", "/src/rucio")
         symlink_rucio_setup(client=False)
         compose_exec("rucio-server", "pip",  "install",  "-e", "/src/rucio", user="root")
         compose(["restart", "rucio-server"])
@@ -235,23 +248,26 @@ def setup(args):
 def teardown(args):
     compose_down()
 
+common = ArgumentParser(add_help=False)
+common.add_argument("--rucio", type=Path, help="Path to rucio repository for development")
+common.add_argument("--dirac", type=Path, help="Path to DIRAC repository for development")
 
 parser = ArgumentParser()
 subparsers = parser.add_subparsers(required=True)
 
-parser_setup = subparsers.add_parser("setup", help="Run setup for all components")
+parser_setup = subparsers.add_parser("setup", help="Run setup for all components", parents=[common])
 parser_setup.set_defaults(func=setup)
 
 parser_teardown = subparsers.add_parser("teardown", help="Cleanup all components")
 parser_teardown.set_defaults(func=teardown)
 
-parser_setup_dirac = subparsers.add_parser("setup-dirac", help="Run setup only for DIRAC")
+parser_setup_dirac = subparsers.add_parser("setup-dirac", help="Run setup only for DIRAC", parents=[common])
 parser_setup_dirac.set_defaults(func=setup_dirac)
 
 parser_teardown_dirac = subparsers.add_parser("teardown-dirac", help="Cleanup only DIRAC")
 parser_teardown_dirac.set_defaults(func=teardown_dirac)
 
-parser_setup_rucio = subparsers.add_parser("setup-rucio", help="Run setup only for RUCIO")
+parser_setup_rucio = subparsers.add_parser("setup-rucio", help="Run setup only for RUCIO", parents=[common])
 parser_setup_rucio.set_defaults(func=setup_rucio)
 
 parser_teardown_rucio = subparsers.add_parser(
