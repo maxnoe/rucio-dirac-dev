@@ -265,6 +265,9 @@ services:
     networks:
       - dirac
       - rucio
+    devices:
+      - /dev/fuse
+    privileged: true
     volumes:
       - cvmfs-keys:/etc/cvmfs/keys
       - "./rucio/rucio.cfg:/home/dirac/rucio/etc/rucio.cfg"
