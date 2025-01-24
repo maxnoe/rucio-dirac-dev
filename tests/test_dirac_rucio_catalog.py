@@ -5,6 +5,12 @@ import pytest
 from rucio.client.replicaclient import ReplicaClient
 from rucio.client.uploadclient import UploadClient
 from rucio.client.didclient import DIDClient
+from rucio.client import Client
+from DIRAC.TransformationSystem.Client.Transformation import Transformation
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.Interfaces.API.Job import Job
+import datetime
+
 
 from test_utils_dirac import wait_for_status
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -138,6 +144,14 @@ def test_store_output(test_scope, tmp_path):
 @pytest.mark.verifies_usecase("DPPS-UC-110-1.X")
 @pytest.mark.usefixtures("_init_dirac")
 def test_add_metadata(tmp_path, test_scope):
+    """
+    Test the addition of metadata to a file in the DIRAC Rucio catalog.
+    This test performs the following steps:
+    1. Registers the file in Rucio using the DIRAC Data Management System.
+    3. Sets metadata for the registered file.
+    4. Retrieves and verifies the metadata.
+    5. Searches for the file using various metadata queries.
+    """
     from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
     name = "add_test_metadata.dat"
@@ -163,64 +177,101 @@ def test_add_metadata(tmp_path, test_scope):
     # add metadata
     catalog = FileCatalog(catalogs=['RucioFileCatalog'])
     metadata_dict = {
-            'date': '15/01/2025',
-            'source': 'crabe',
-            'obs_id': '45E18'
-        }
+                "MCCampaign": "Prod5bTest",
+                "array_layout": "Advanced-Baseline",
+                "site": "LaPalma",
+                "particle": "electron",
+                "thetaP": 20,
+                "phiP": 180.0,
+                "tel_sim_prog_version": "2020-06-29b",
+                "tel_sim_prog": "sim_telarray",
+                "data_level": -1,
+                "outputType": "Data",
+                "configuration_id": 15,
+            }
     catalog.setMetadata(lfn, metadata_dict)
    
     # get metadata
-    #returnedMetadata=catalog.getFileUserMetadata([lfn])["Value"]["Successful"][lfn]
-    result = catalog.getFileUserMetadata([lfn])
-    assert result["OK"]
-    returnedMetadata = result["Value"]["Successful"][lfn]
-    assert '15/01/2025' in returnedMetadata['date']
-    assert 'crabe' in returnedMetadata['source']
-    assert '45E18' in returnedMetadata['obs_id']
+    resultGetMetadata = catalog.getFileUserMetadata([lfn])
+    assert resultGetMetadata["OK"]
+    returnedMetadata = resultGetMetadata["Value"]["Successful"][lfn]
+    assert returnedMetadata['MCCampaign'] == 'Prod5bTest'
+    assert returnedMetadata['data_level'] == -1
+    assert returnedMetadata['configuration_id'] == 15
 
     # find file by metadata
-    #catalog.
+    # string
+    metadata_dict = { 
+            'particle': 'electron'}
+                                            
+    resultFindFilesByMetadata = catalog.findFilesByMetadata(metadata_dict)
+    assert resultFindFilesByMetadata["OK"]
+    assert lfn in resultFindFilesByMetadata["Value"]
+    
+    # number
+    metadata_dict = {
+            'configuration_id': {'=': 15}}
+    assert lfn in catalog.findFilesByMetadata(metadata_dict)["Value"]
 
+    metadata_dict = {
+            'configuration_id': {'>=': 13}}
+    assert lfn in catalog.findFilesByMetadata(metadata_dict)["Value"]
 
+    metadata_dict = {
+            'configuration_id': {'>=': 16}}
+    assert len(catalog.findFilesByMetadata(metadata_dict)["Value"]) == 0
+
+    # in
+    metadata_dict = { 
+            'particle': {'in': ['proton','electron']}}                                   
+    resultFindFilesByMetadata = catalog.findFilesByMetadata(metadata_dict)
+    assert resultFindFilesByMetadata["OK"]
+    assert lfn in resultFindFilesByMetadata["Value"]
+    
+
+    metadata_dict = { 
+            'particle': {'in': ['proton','electron']},'site': {'in': [ "LaPalma", 'paranal'] }  }                                 
+    resultFindFilesByMetadata = catalog.findFilesByMetadata(metadata_dict)
+    assert resultFindFilesByMetadata["OK"]
+    assert lfn in resultFindFilesByMetadata["Value"]
+   
+    metadata_dict = { 
+            'particle': {'in': ['proton','electron']},'site': {'in': [ "Paris", 'paranal'] }  }                                 
+    resultFindFilesByMetadata = catalog.findFilesByMetadata(metadata_dict)
+    assert resultFindFilesByMetadata["OK"]
+    assert len(resultFindFilesByMetadata["Value"]) == 0
+
+    metadata_dict = { 
+            'particle': {'in': ['proton','electron']},'site': {'in': [ "LaPalma", 'paranal']},'configuration_id': {'=': 14} }                                
+    resultFindFilesByMetadata = catalog.findFilesByMetadata(metadata_dict)
+    assert resultFindFilesByMetadata["OK"]
+    assert len(resultFindFilesByMetadata["Value"]) == 0
 
 @pytest.mark.usefixtures("_init_dirac")
-def test_add_metadata_using_rucio_setmetadata(tmp_path, test_scope):
-    from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+def test_transformation():
+    transClient = TransformationClient()
+        # Standard parameters
 
-    name = "add_test_metadata.dat"
-    path = tmp_path / name
-    path.write_text("Hello from DIRAC")
+    transformation = Transformation()
+    transformation.setTransformationName(str(datetime.datetime.now()))
+    transformation.setType("DataReprocessing")
+    transformation.setDescription("Rucio Catalog test")
+    transformation.setLongDescription("Rucio Catalog test")
+    transformation.setCataLog("RucioFileCatalog")
+    inputquery = { 
+        'particle': 'electron'}
+    transformation.setInputMetaQuery(inputquery)
+    workflow_body = create_workflow_body()
+    transformation.setBody(workflow_body)
+    resultTransformationCreate = transformation.addTransformation()
+    transformation.setStatus("Active")
+    transformation.setAgentType("Automatic")
+    assert resultTransformationCreate["OK"]
+    
 
-    lfn = f"/testvo.example.org/{test_scope}/{name}"
-
-    rse = "STORAGE-1"
-    dm = DataManager()
-    resultPutAndRegister = dm.putAndRegister(lfn, str(path), rse)
-
-    # check dirac result
-    # print("\n".join(result['CallStack']))
-    assert resultPutAndRegister["OK"]
-    failed = resultPutAndRegister["Value"]["Failed"]
-    assert len(failed) == 0, f"Failed to upload file: {failed}, result: {result}"
-    successful = resultPutAndRegister["Value"]["Successful"]
-    assert lfn in successful
-    assert "put" in successful[lfn]
-    assert "register" in successful[lfn]
-
-   
-    did_client = DIDClient()
-    meta = {
-        "obs_id": 200000001,
-        "tel_id": 1,
-        "category": "A",
-        "format": "zfits",
-        "data_levels": ["DL0", "DL1"],
-        "data_type": "event",
-    }
-    did_client.set_metadata_bulk(scope=test_scope, name=lfn, meta=meta)
-
-    # get metadata
-    catalog = FileCatalog(catalogs=['RucioFileCatalog'])
-    resultGetMetadata=catalog.getFileUserMetadata([lfn])
-    print('returned')
-    assert resultGetMetadata["OK"],resultGetMetadata["Message"]
+def create_workflow_body():
+    job = Job()
+    job.setName("mandelbrot raw")
+    job.setOutputSandbox(["*log"])
+    job.setExecutable("ls")
+    return(job.workflow.toXML())
