@@ -6,11 +6,14 @@ ARG RUCIO_VERSION=""
 ARG USERID=1000
 ARG GROUPID=1000
 
+VOLUME /opt/dirac
+
 RUN dnf install -y \
         procps-ng \
         psmisc \
         openssh-clients \
         iptables-services \
+        sudo \
         https://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-2.el9.x86_64.rpm
 
 RUN \
@@ -47,9 +50,9 @@ COPY --chown=dirac:dirac ./runsvdir-start /opt/dirac/sbin/runsvdir-start
 COPY --chown=dirac:dirac ./configure.py ./resources.conf ./install_site.sh /home/dirac/
 COPY --chown=dirac:dirac ./bashrc ./dirac-installation.cfg /opt/dirac/
 
-# switch back to root for running systemd
+COPY entrypoint.sh /entrypoint.sh
 USER root
-CMD ["/opt/dirac/sbin/runsvdir-start"]
+CMD ["/entrypoint.sh"]
 
 ENV \
   DIRAC="${DIRACOS}" \

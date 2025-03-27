@@ -159,13 +159,7 @@ def setup_dirac(args):
 
     # dirac setup, the installation process needs the DB, so we cannot
     # run it already at image build time
-    dirac_exec = partial(compose_exec, user="dirac:dirac")
     user_exec = partial(compose_exec, user="user:user")
-    dirac_exec(
-        "dirac-server",
-        "/home/dirac/install_site.sh",
-    )
-    dirac_exec("dirac-server", "python", "configure.py", "resources.conf", "-c", "yes")
     user_exec("clients", "dirac-proxy-init", "--nocs")
     user_exec(
         "clients",

@@ -235,6 +235,7 @@ services:
       - ./certs/ssh/diracuser_sshkey:/home/dirac/.ssh/diracuser_sshkey:z
       - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
       - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
+      - dirac-installation:/opt/dirac
 
   dirac-db:
     image: mysql:8
@@ -440,3 +441,4 @@ volumes:
   ftsdb-data:
   rucio-usercerts-root:
   storage-1:
+  dirac-installation:
