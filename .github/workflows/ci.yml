@@ -25,3 +25,22 @@ jobs:
 
       - name: Tests
         run: docker compose exec clients python3 -m pytest -v --color=yes
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir logs
+          docker compose logs > logs/compose-logs.txt || echo "Failed to get compose logs"
+          docker compose exec dirac-server bash -c "                                                                                  ✔  3.2.0  
+            cd /opt/dirac/runit && 
+            find . -wholename '*/log/current' | tar -cvzf logs.tar.gz -T -
+          " || echo "Could not collect dirac-server logs"
+          docker compose cp dirac-server:/opt/dirac/runit/logs.tar.gz logs/dirac-server.tar.gz || true
+          docker compose cp dirac-ce:/home/dirac/data logs/dirac-ce/ || echo "Failed to get dirac-ce logs"
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: logs/
