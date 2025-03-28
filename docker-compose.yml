@@ -236,6 +236,13 @@ services:
       - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
       - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
       - dirac-installation:/opt/dirac
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /opt/dirac/setup_done ] && curl -sf http://localhost:8080/DIRAC/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 300s
+      start_interval: 10s
+      retries: 3
 
   dirac-db:
     image: mysql:8
@@ -408,6 +415,10 @@ services:
       - "storage-1:/storage-1"
       - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
       - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
+
+    depends_on:
+      dirac-server:
+        condition: service_healthy
       
     working_dir: "/home/user/repo"
     environment:

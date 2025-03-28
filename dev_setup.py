@@ -142,7 +142,6 @@ def setup_dirac(args):
         sys.exit(1)
 
     compose_up(*DIRAC_SERVICES, *COMMON_SERVICES)
-    time.sleep(15)
 
     # dev setup
     if os.getenv("DIRAC_REPOSITORY"):
@@ -169,19 +168,6 @@ def setup_dirac(args):
         "-S",
         "Rucio-Tests",
     )
-    user_exec("clients", "dirac-proxy-init", "-g", "dirac_admin")
-    user_exec("clients", "dirac-admin-allow-site", "CTAO.CI.de", "add site")
-    user_exec("clients", "dirac-proxy-destroy")
-    # get ssh hostcert of the ce into known_hosts
-    dirac_exec("dirac-server", "bash", "-c", "ssh-keyscan -H dirac-ce >> ~/.ssh/known_hosts")
-    dirac_exec("dirac-server", "ssh", "-vvv", "dirac@dirac-ce", "-i", "~/.ssh/diracuser_sshkey", "echo", "Hello World")
-    for svc in ["SiteDirector", "PilotSyncAgent", "Optimizers"]:
-        dirac_exec(
-            "dirac-server",
-            "dirac-restart-component",
-            "WorkloadManagement",
-            svc,
-        )
 
     # cvmfs setup
     compose_exec(
