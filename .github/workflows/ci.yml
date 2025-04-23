@@ -17,7 +17,7 @@ jobs:
       - name: Test Docker
         run: |
           docker version
-          docker info  
+          docker info
 
       - name: Setup
         run: |
@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir logs
           docker compose logs > logs/compose-logs.txt || echo "Failed to get compose logs"
-          docker compose exec dirac-server bash -c "                                                                                  ✔  3.2.0  
+          docker compose exec dirac-server bash -c "
             cd /opt/dirac/runit && 
             find . -wholename '*/log/current' | tar -cvzf logs.tar.gz -T -
           " || echo "Could not collect dirac-server logs"
