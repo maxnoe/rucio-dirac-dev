@@ -13,7 +13,7 @@ ARG RUCIO_VERSION="36.0.0.post2"
 ARG USERID=1000
 ARG GROUPID=1000
 
-ENV DIRAC_DIR="/dirac/${DIRACOS_VERSION}"
+ENV DIRAC_DIR="/dirac/${DIRAC_VERSION}"
 
 RUN dnf install -y \
         procps \
