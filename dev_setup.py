@@ -6,6 +6,10 @@ import time
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
+import logging
+
+log = logging.getLogger("rucio-dirac-dev")
+
 
 RUCIO_SERVICES = [
     "rucio-db",
@@ -58,7 +62,7 @@ def chmod_certs():
 def compose(args):
     cmd = ["docker", "compose"]
     cmd.extend(args)
-    print(shlex.join(cmd))
+    log.info(shlex.join(cmd))
     sp.run(cmd, check=True)
 
 
@@ -122,17 +126,17 @@ def any_running(*services):
 
 def setup_dirac(args):
     if args.rucio is not None:
-        print(f"Using rucio repository in {args.rucio}")
+        log.info(f"Using rucio repository in {args.rucio}")
         os.environ["RUCIO_REPOSITORY"] = str(args.rucio.absolute())
 
     if args.dirac is not None:
-        print(f"Using DIRAC repository in {args.dirac}")
+        log.info(f"Using DIRAC repository in {args.dirac}")
         os.environ["DIRAC_REPOSITORY"] = str(args.dirac.absolute())
 
 
     chmod_certs()
     if any_running(*DIRAC_SERVICES):
-        print(
+        log.info(
             "At least one DIRAC service is already running. Run teardown-dirac if you want to start fresh."
         )
         sys.exit(1)
@@ -204,12 +208,12 @@ def setup_dirac(args):
 
 def setup_rucio(args):
     if args.rucio is not None:
-        print(f"Using rucio repository in {args.rucio}")
+        log.info(f"Using rucio repository in {args.rucio}")
         os.environ["RUCIO_REPOSITORY"] = str(args.rucio.absolute())
 
     chmod_certs()
     if any_running(*RUCIO_SERVICES):
-        print(
+        log.info(
             "At least one RUCIO service is already running."
             " Run teardown-rucio if you want to start fresh."
         )
@@ -280,11 +284,12 @@ parser_teardown_rucio.set_defaults(func=teardown_rucio)
 
 
 def main(args=None):
+    logging.basicConfig(level=logging.INFO)
     args = parser.parse_args(args=args)
     if "USERID" not in os.environ or "GROUPID" not in os.environ:
-        print("To silence warnings about USERID or GROUPID not being set, run:")
-        print("  $ export USERID=$(id -u)")
-        print("  $ export GROUPID=$(id -g)")
+        log.info("To silence warnings about USERID or GROUPID not being set, run:")
+        log.info("  $ export USERID=$(id -u)")
+        log.info("  $ export GROUPID=$(id -g)")
     args.func(args)
 
 
