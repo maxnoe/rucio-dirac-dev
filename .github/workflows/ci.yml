@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout
@@ -18,11 +18,6 @@ jobs:
         run: |
           docker version
           docker info
-
-      - name: Disable Apparmor
-        run: |
-          sudo aa-teardown || true
-          sudo systemctl disable --now apparmor.service
 
       - name: Setup
         run: |
