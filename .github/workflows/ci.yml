@@ -29,6 +29,7 @@ jobs:
       - name: Collect logs
         if: always()
         run: |
+          docker compose ps
           mkdir logs
           docker compose logs | tee logs/compose-logs.txt || echo "Failed to get compose logs"
           docker compose exec dirac-server bash -c "
