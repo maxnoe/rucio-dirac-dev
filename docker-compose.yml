@@ -158,13 +158,14 @@ services:
 
   rucio-storage-1:
     hostname: rucio-storage-1
-    image: rucio/xrootd
+    image: rucio/test-xrootd:${RUCIO_VERSION}
     environment:
       XRDPORT: "1094"
     volumes:
       - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
       - ./certs/hostcert_rucio-storage-1.pem:/tmp/xrdcert.pem:z
       - ./certs/hostcert_rucio-storage-1.key.pem:/tmp/xrdkey.pem:z
+      - storage-1:/rucio 
     networks:
       - rucio
     ulimits:
@@ -174,7 +175,7 @@ services:
 
   rucio-storage-2:
     hostname: rucio-storage-2
-    image: rucio/xrootd
+    image: rucio/test-xrootd:${RUCIO_VERSION}
     environment:
       XRDPORT: "1094"
     volumes:
@@ -190,7 +191,7 @@ services:
 
   rucio-storage-3:
     hostname: rucio-storage-3
-    image: rucio/xrootd
+    image: rucio/test-xrootd:${RUCIO_VERSION}
     environment:
       XRDPORT: "1094"
     volumes:
@@ -292,7 +293,7 @@ services:
 
 
   fts:
-    image: rucio/fts:${RUCIO_VERSION}
+    image: rucio/test-fts:${RUCIO_VERSION}
     hostname: fts
     volumes:
       - ./certs/test_ca.pem:/etc/grid-security/certificates/37cc428d.0
@@ -403,6 +404,7 @@ services:
       # the clients image has voms-proxy-init, so we use it to create it
       # and share it via a docker volume. Should probably be done in a better way
       - "rucio-usercerts-root:/root/certs/"
+      - "storage-1:/storage-1"
       - ${RUCIO_REPOSITORY:-/dev/null}:/src/rucio
       - ${DIRAC_REPOSITORY:-/dev/null}:/src/DIRAC
       
@@ -437,3 +439,4 @@ volumes:
   dirac-db-data:
   ftsdb-data:
   rucio-usercerts-root:
+  storage-1:
