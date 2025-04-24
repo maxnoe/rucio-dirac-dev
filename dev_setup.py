@@ -176,6 +176,7 @@ def setup_dirac(args):
     user_exec("clients", "dirac-proxy-destroy")
     # get ssh hostcert of the ce into known_hosts
     dirac_exec("dirac-server", "bash", "-c", "ssh-keyscan -H dirac-ce >> ~/.ssh/known_hosts")
+    dirac_exec("dirac-server", "ssh", "-vvv", "dirac@dirac-ce", "-i", "~/.ssh/diracuser_sshkey", "echo", "Hello World")
     for svc in ["SiteDirector", "PilotSyncAgent", "Optimizers"]:
         dirac_exec(
             "dirac-server",
