@@ -30,7 +30,7 @@ jobs:
         if: always()
         run: |
           mkdir logs
-          docker compose logs > logs/compose-logs.txt || echo "Failed to get compose logs"
+          docker compose logs | tee logs/compose-logs.txt || echo "Failed to get compose logs"
           docker compose exec dirac-server bash -c "
             cd /opt/dirac/runit && 
             find . -wholename '*/log/current' | tar -cvzf logs.tar.gz -T -
