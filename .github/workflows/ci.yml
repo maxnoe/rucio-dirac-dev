@@ -19,6 +19,11 @@ jobs:
           docker version
           docker info
 
+      - name: Disable Apparmor
+        run: |
+          sudo aa-teardown || true
+          sudo systemctl disable --now apparmor.service
+
       - name: Setup
         run: |
           python3 dev_setup.py setup
