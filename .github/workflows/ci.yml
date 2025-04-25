@@ -17,6 +17,7 @@ jobs:
       - name: Test Docker
         run: |
           docker version
+          docker compose version
           docker info
 
       - name: Disable Apparmor
@@ -36,12 +37,13 @@ jobs:
         run: |
           docker compose ps
           mkdir logs
-          docker compose logs | tee logs/compose-logs.txt || echo "Failed to get compose logs"
+          docker compose logs > logs/compose-logs.txt || echo "Failed to get compose logs"
           docker compose exec dirac-server bash -c "
             cd /opt/dirac/runit && 
             find . -wholename '*/log/current' | tar -cvzf logs.tar.gz -T -
           " || echo "Could not collect dirac-server logs"
           docker compose cp dirac-server:/opt/dirac/runit/logs.tar.gz logs/dirac-server.tar.gz || true
+          docker compose exec -u dirac dirac-ce ls -la /home/dirac
           docker compose cp dirac-ce:/home/dirac/data logs/dirac-ce/ || echo "Failed to get dirac-ce logs"
 
       - name: Upload logs
