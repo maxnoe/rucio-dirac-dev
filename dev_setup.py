@@ -121,10 +121,14 @@ def any_running(*services):
         encoding="utf-8",
     )
     running_services = set(ret.stdout.splitlines())
+
+    if len(services) == 0:
+        return len(running_services) > 0
+
     return len(running_services.intersection(services)) > 0
 
 
-def setup_dirac(args):
+def setup(args):
     if args.rucio is not None:
         log.info(f"Using rucio repository in {args.rucio}")
         os.environ["RUCIO_REPOSITORY"] = str(args.rucio.absolute())
@@ -133,61 +137,44 @@ def setup_dirac(args):
         log.info(f"Using DIRAC repository in {args.dirac}")
         os.environ["DIRAC_REPOSITORY"] = str(args.dirac.absolute())
 
-
     chmod_certs()
-    if any_running(*DIRAC_SERVICES):
+    if any_running():
         log.info(
-            "At least one DIRAC service is already running. Run teardown-dirac if you want to start fresh."
+            "At least one service is already running."
+            " Run teardown if you want to start fresh."
         )
-        sys.exit(1)
 
-    compose_up(*DIRAC_SERVICES, *COMMON_SERVICES)
+    # run database init first
+    compose_up("rucio-db")
+    compose(["run", "--rm", "rucio-init"])
+
+    # then all the rest
+    compose_up(*RUCIO_SERVICES, *DIRAC_SERVICES, *COMMON_SERVICES)
     time.sleep(15)
+
+    if os.getenv("RUCIO_REPOSITORY"):
+        symlink_rucio_setup(client=True)
+        compose_exec("clients", "pip",  "install",  "-e", "/src/rucio")
+        compose_exec("dirac-server", "pip",  "install",  "-e", "/src/rucio", user="root")
+
+        symlink_rucio_setup(client=False)
+        compose_exec("rucio-server", "pip",  "install",  "-e", "/src/rucio", user="root")
+        compose(["restart", "rucio-server"])
+
+        time.sleep(15)
+
+    compose_exec("clients", "/setup_certificates.sh", user="root")
+    compose_exec("clients", "/setup_rucio.sh")
 
     # dev setup
     if os.getenv("DIRAC_REPOSITORY"):
         compose_exec("clients", "pip",  "install",  "-e", "/src/DIRAC", user="root")
         compose_exec("dirac-server", "pip",  "install",  "-e", "/src/DIRAC", user="root")
 
-    if os.getenv("RUCIO_REPOSITORY"):
-        symlink_rucio_setup(client=True)
-        compose_exec("dirac-server", "pip",  "install",  "-e", "/src/rucio", user="root")
-
     if os.getenv("RUCIO_REPOSITORY") or os.getenv("DIRAC_REPOSITORY"):
         compose(["restart", "dirac-server"])
         time.sleep(15)
 
-    # dirac setup, the installation process needs the DB, so we cannot
-    # run it already at image build time
-    dirac_exec = partial(compose_exec, user="dirac:dirac")
-    user_exec = partial(compose_exec, user="user:user")
-    dirac_exec(
-        "dirac-server",
-        "/home/dirac/install_site.sh",
-    )
-    dirac_exec("dirac-server", "python", "configure.py", "resources.conf", "-c", "yes")
-    user_exec("clients", "dirac-proxy-init", "--nocs")
-    user_exec(
-        "clients",
-        "dirac-configure",
-        "-C",
-        "dips://dirac-server:9135/Configuration/Server",
-        "-S",
-        "Rucio-Tests",
-    )
-    user_exec("clients", "dirac-proxy-init", "-g", "dirac_admin")
-    user_exec("clients", "dirac-admin-allow-site", "CTAO.CI.de", "add site")
-    user_exec("clients", "dirac-proxy-destroy")
-    # get ssh hostcert of the ce into known_hosts
-    dirac_exec("dirac-server", "bash", "-c", "ssh-keyscan -H dirac-ce >> ~/.ssh/known_hosts")
-    dirac_exec("dirac-server", "ssh", "-vvv", "dirac@dirac-ce", "-i", "~/.ssh/diracuser_sshkey", "echo", "Hello World")
-    for svc in ["SiteDirector", "PilotSyncAgent", "Optimizers"]:
-        dirac_exec(
-            "dirac-server",
-            "dirac-restart-component",
-            "WorkloadManagement",
-            svc,
-        )
 
     # cvmfs setup
     compose_exec(
@@ -206,51 +193,6 @@ def setup_dirac(args):
     compose_exec("cvmfs-stratum0", "cvmfs_server", "publish")
 
 
-def setup_rucio(args):
-    if args.rucio is not None:
-        log.info(f"Using rucio repository in {args.rucio}")
-        os.environ["RUCIO_REPOSITORY"] = str(args.rucio.absolute())
-
-    chmod_certs()
-    if any_running(*RUCIO_SERVICES):
-        log.info(
-            "At least one RUCIO service is already running."
-            " Run teardown-rucio if you want to start fresh."
-        )
-        sys.exit(1)
-
-    # run database init first
-    compose_up("rucio-db")
-    compose(["run", "--rm", "rucio-init"])
-
-    # then all the rest
-    compose_up(*RUCIO_SERVICES, *COMMON_SERVICES)
-    time.sleep(15)
-
-    if os.getenv("RUCIO_REPOSITORY"):
-        symlink_rucio_setup(client=True)
-        compose_exec("clients", "pip",  "install",  "-e", "/src/rucio")
-        symlink_rucio_setup(client=False)
-        compose_exec("rucio-server", "pip",  "install",  "-e", "/src/rucio", user="root")
-        compose(["restart", "rucio-server"])
-        time.sleep(15)
-
-    compose_exec("clients", "/setup_certificates.sh", user="root")
-    compose_exec("clients", "/setup_rucio.sh")
-
-
-def teardown_dirac(args):
-    compose_down(*DIRAC_SERVICES)
-
-
-def teardown_rucio(args):
-    compose_down(*RUCIO_SERVICES)
-
-
-def setup(args):
-    setup_rucio(args)
-    setup_dirac(args)
-
 
 def teardown(args):
     compose_down()
@@ -267,20 +209,6 @@ parser_setup.set_defaults(func=setup)
 
 parser_teardown = subparsers.add_parser("teardown", help="Cleanup all components")
 parser_teardown.set_defaults(func=teardown)
-
-parser_setup_dirac = subparsers.add_parser("setup-dirac", help="Run setup only for DIRAC", parents=[common])
-parser_setup_dirac.set_defaults(func=setup_dirac)
-
-parser_teardown_dirac = subparsers.add_parser("teardown-dirac", help="Cleanup only DIRAC")
-parser_teardown_dirac.set_defaults(func=teardown_dirac)
-
-parser_setup_rucio = subparsers.add_parser("setup-rucio", help="Run setup only for RUCIO", parents=[common])
-parser_setup_rucio.set_defaults(func=setup_rucio)
-
-parser_teardown_rucio = subparsers.add_parser(
-    "teardown-rucio", help="Run cleanup only for RUCIO"
-)
-parser_teardown_rucio.set_defaults(func=teardown_rucio)
 
 
 def main(args=None):

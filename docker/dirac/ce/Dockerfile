@@ -21,6 +21,7 @@ RUN dnf install -y \
         openssh-clients \
         epel-release \
         https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm \
+        python python-unversioned-command \
     && dnf install -y cvmfs \
     && cvmfs_config setup
 
