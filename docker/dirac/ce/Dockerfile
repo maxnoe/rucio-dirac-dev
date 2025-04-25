@@ -7,9 +7,9 @@ RUN python -m pip install --no-cache build && python -m build --wheel /src/
 
 FROM almalinux:9
 
-ARG DIRACOS_VERSION="2.46"
-ARG DIRAC_VERSION="8.0.62"
-ARG RUCIO_VERSION="36.0.0.post2"
+ARG DIRACOS_VERSION=""
+ARG DIRAC_VERSION=""
+ARG RUCIO_VERSION=""
 ARG USERID=1000
 ARG GROUPID=1000
 
