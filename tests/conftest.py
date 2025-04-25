@@ -18,7 +18,8 @@ def rucio_test_account():
 
 @pytest.fixture(scope="session")
 def _dirac_proxy():
-    sp.run(["dirac-proxy-init", "-g", "test_group"], check=True)
+    ret = sp.run(["dirac-proxy-init", "-g", "test_group"], text=True, capture_output=True)
+    assert ret.returncode == 0, ret.stderr
 
 
 @pytest.fixture(scope="session")
@@ -42,7 +43,7 @@ def user_key():
 @pytest.fixture(scope="session")
 def voms_proxy(user_key, user_cert):
     """Auth proxy needed for accessing RSEs"""
-    sp.run(
+    ret = sp.run(
         [
             "voms-proxy-init",
             "-valid",
@@ -52,10 +53,10 @@ def voms_proxy(user_key, user_cert):
             "-key",
             user_key,
         ],
-        check=True,
         capture_output=True,
-        encoding="utf-8",
+        text=True,
     )
+    assert ret.returncode == 0, ret.stderr
     return f"/tmp/x509up_u{os.getuid()}"
 
 

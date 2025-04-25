@@ -419,7 +419,9 @@ services:
     depends_on:
       dirac-server:
         condition: service_healthy
-      
+      rucio-server:
+        condition: service_started
+
     working_dir: "/home/user/repo"
     environment:
       RUCIO_HOME: "/home/user/rucio"

@@ -139,7 +139,6 @@ def setup_dirac(args):
         log.info(
             "At least one DIRAC service is already running. Run teardown-dirac if you want to start fresh."
         )
-        sys.exit(1)
 
     compose_up(*DIRAC_SERVICES, *COMMON_SERVICES)
 
@@ -197,7 +196,6 @@ def setup_rucio(args):
             "At least one RUCIO service is already running."
             " Run teardown-rucio if you want to start fresh."
         )
-        sys.exit(1)
 
     # run database init first
     compose_up("rucio-db")
