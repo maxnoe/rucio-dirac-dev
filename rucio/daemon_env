@@ -1,4 +1,4 @@
-RUCIO_CFG_DATABASE_DEFAULT="postgresql://rucio:secret@rucio-db/rucio"
+RUCIO_CFG_DATABASE_DEFAULT="postgresql+psycopg://rucio:secret@rucio-db/rucio"
 RUCIO_DAEMON_ARGS="--sleep-time 5"
 RUCIO_CFG_CLIENT_RUCIO_HOST="https://rucio-server"
 RUCIO_CFG_CLIENT_AUTH_HOST="https://rucio-server"

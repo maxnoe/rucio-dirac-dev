@@ -36,8 +36,8 @@ RUN curl -LO https://github.com/DIRACGrid/DIRACOS2/releases/download/${DIRACOS_V
     && bash DIRACOS-Linux-x86_64.sh -p ${DIRAC_DIR}/diracos \
     && rm -f DIRACOS-Linux-x86_64.sh \
     && source ${DIRAC_DIR}/diracos/diracosrc \
-    && micromamba install dirac-grid=${DIRAC_VERSION} rucio-clients==${RUCIO_VERSION} pytest \
-    && pip install --no-cache-dir /tmp/*.whl
+    && micromamba install dirac-grid=${DIRAC_VERSION} pytest \
+    && pip install --no-cache-dir /tmp/*.whl rucio-clients==${RUCIO_VERSION}
 
 RUN mkdir -p ${DIRAC_DIR}/.globus \
     && mkdir -p ${DIRACOS}/etc/grid-security/certificates

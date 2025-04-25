@@ -1,6 +1,6 @@
 from .algorithms import extract_scope_dirac, lfn2pfn_dirac
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "__version__",
@@ -8,7 +8,7 @@ __all__ = [
     "get_algorithms",
 ]
 
-SUPPORTED_VERSION = "~=36.0"
+SUPPORTED_VERSION = "~=37.0"
 
 
 def get_algorithms():
