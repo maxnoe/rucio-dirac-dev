@@ -12,7 +12,7 @@ def test_server_version():
     """Test the expected version of rucio is running"""
     client = Client()
     result = client.ping()
-    assert result["version"].startswith("36")
+    assert result["version"].startswith("37")
 
 
 def remove_tokens():

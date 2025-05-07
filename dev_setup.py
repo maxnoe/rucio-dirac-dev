@@ -144,9 +144,10 @@ def setup(args):
             " Run teardown if you want to start fresh."
         )
 
-    # run database init first
-    compose_up("rucio-db")
-    compose(["run", "--rm", "rucio-init"])
+    else:
+        # run database init first, only when nothing already runs
+        compose_up("rucio-db")
+        compose(["run", "--rm", "--build", "rucio-init"])
 
     # then all the rest
     compose_up(*RUCIO_SERVICES, *DIRAC_SERVICES, *COMMON_SERVICES)
