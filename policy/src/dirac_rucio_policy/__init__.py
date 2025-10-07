@@ -8,7 +8,7 @@ __all__ = [
     "get_algorithms",
 ]
 
-SUPPORTED_VERSION = "~=37.0"
+SUPPORTED_VERSION = "~=38.0"
 
 
 def get_algorithms():
